@@ -2,8 +2,6 @@
 
 
 import 'tailwindcss/tailwind.css'
-import React from "react"
-import {useForm} from "react-hook-form"
 
 // box to remve/add by name
 
@@ -11,41 +9,55 @@ import {useForm} from "react-hook-form"
 
 export default function ReplenishmentsView(props) {
     var errorScript;
-    const {register, handleSubmit, errors } = useForm()
-
-    const onSubmit = data => {
-        console.log(data)   
+    const onSubmit = async event => {
+        event.preventDefault()
+        const fields = (field) => event.target[field].value
+        
+        const data = {
+          category: fields('category'),
+          operation: fields('operation'),
+          type: fields('superOrSimple')
+        }
+        var res = await fetch(
+            '/api/a',
+      {
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: 'POST'
+      }
+    )//.then(response  => response.text()).then(resp => console.log(resp))
+    res = await res.text()
+    console.log(res)
+        // clear form -> event.target.reset()
     };
-    function doo(data) {
-        console.log(data)
-    }
 
     console.log("hi")
     return <div >
         <h1 >Big Data </h1> 
-        <form action="/api/a" onSubmit={onSubmit} method="POST">
+        <form  onSubmit={onSubmit} >
             <div>Manage Categories</div>
 
             <div >
-                <input name='test' value='something'></input>
-                <input id='ainsert' inputRef={register('operation')} name='operation' type="radio" value="INSERT" required>
+                <input id='ainsert' htmlFor='operation' name='operation' type="radio" value="INSERT" required>
                     
                 </input>
                 <label htmlFor="insert">Insert</label>
-                <input id='aremove' name='operation' {...register} type="radio" value="DELETE"></input>
+                <input id='aremove' htmlFor='operation'name='operation'  type="radio" value="DELETE"></input>
                 <label htmlFor="aremove">Remove</label>
             </div>
 
             <div>
-                <input id='acategory' inputRef={register('superOrSimple')} name='superOrsimple' type="radio" value="super" required></input>
+                <input id='acategory'htmlFor="superOrSimple"  name='superOrSimple' type="radio" value="super" required></input>
                 <label htmlFor="acategory">Super Category</label>
-                <input id='asubcategory' inputRef={register('superOrSimple')} name='superOrsimple' type="radio" value="simple"></input>
+                <input id='asubcategory'  htmlFor='superOrSimple' name='superOrSimple'  type="radio" value="simple"></input>
                 <label htmlFor="asubcategory">Simple Category</label>
             </div>
 
-            <input type="text" name='category' inputRef={register('category')} autoComplete='on' multiple id="category" placeholder="insert category name" required></input>
+            <input type="text" name='category'  autoComplete='on' multiple id="category" placeholder="insert category name" required></input>
 
-            <input type="submit" onClick= {(eve)=>console.log(eve)} value="Submit"></input>
+            <input type="submit" htmlValue="Submit"></input>
         </form>
         <div id='aoutput' >
         </div>

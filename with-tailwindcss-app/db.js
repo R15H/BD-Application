@@ -16,7 +16,6 @@ const  client = new Client( credentials
 client.connect()
 
 client.query('SELECT NOW()', (err, res) => {
-  console.log(err, res)
   if(err === null){
     console.log("Client is alive :D")
   }

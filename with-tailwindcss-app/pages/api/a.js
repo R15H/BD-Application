@@ -8,10 +8,8 @@ const threateningMessage ="Unexpected field value. This should never happen here
 
 // await is only allowed inside async functions! remove the async atributte and we lose everything life has to give. Why?
 export default async function alineaA(req, res) {
-  console.log(req.query)
-  var {operation, superOrsimple, category } = req.query 
+  var {operation, type, category } = req.body
   var baseQuery;
-
   try{
     switch(operation){
       case 'INSERT':
@@ -24,12 +22,12 @@ export default async function alineaA(req, res) {
         return res.status(400).json({message : threateningMessage})
     }
 
-    switch(superOrsimple){
+    switch(type){
       case 'super':
-        superOrsimple = "super_category"
+        type = "super_category"
         break
       case 'simple':
-        superOrsimple = "simple_category"
+        type = "simple_category"
         break
       default:
         return res.status(400).json({message : threateningMessage })
@@ -38,7 +36,7 @@ export default async function alineaA(req, res) {
     const client = await pool.connect()
     try{
       await client.query('BEGIN')
-      const queryText = baseQuery.replace('%', superOrsimple)
+      const queryText = baseQuery.replace('%', type)
       const res = await client.query(queryText, [category]) // always separate this kind of statements into two parts
       await client.query('COMMIT')
     }
