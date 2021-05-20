@@ -27,9 +27,9 @@ export default function ReplenishmentsView(props) {
         },
         method: 'POST'
       }
-    )//.then(response  => response.text()).then(resp => console.log(resp))
-    res = await res.text()
-    console.log(res)
+    )
+    res = await res.text().then(text => JSON.parse(text))
+    alert(res.message)
         // clear form -> event.target.reset()
     };
 

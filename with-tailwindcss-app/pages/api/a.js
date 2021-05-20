@@ -9,14 +9,16 @@ const threateningMessage ="Unexpected field value. This should never happen here
 // await is only allowed inside async functions! remove the async atributte and we lose everything life has to give. Why?
 export default async function alineaA(req, res) {
   var {operation, type, category } = req.body
+  console.log(operation, type, category)
   var baseQuery;
   try{
     switch(operation){
       case 'INSERT':
-        baseQuery = "INSERT INTO category VALUES ($1::text); INSERT INTO % VALUES ($1::text)"
+        baseQuery = ["INSERT INTO category VALUES ($1::text)","INSERT INTO % VALUES ($1::text)"]
         break
       case 'DELETE':
-        baseQuery = 'DELETE FROM category WHERE category = $1::text; DELETE FROM % WHERE name = $1::text'
+        // first delete from the super/simple category table to conform with integrity constrains
+        baseQuery = ["DELETE FROM % c WHERE c.name = $1::text","DELETE FROM category c WHERE c.name =  $1::text" ]
         break
       default:
         return res.status(400).json({message : threateningMessage})
@@ -35,10 +37,17 @@ export default async function alineaA(req, res) {
 
     const client = await pool.connect()
     try{
+      let statements = []
       await client.query('BEGIN')
-      const queryText = baseQuery.replace('%', type)
-      const res = await client.query(queryText, [category]) // always separate this kind of statements into two parts
+      let queryText = baseQuery[0].replace('%', type)
+      statements.push( await client.query(queryText, [category]) ) // always separate this kind of statements into two parts
+      
+
+      queryText = baseQuery[1].replace('%', type)
+      statements.push( await client.query(queryText, [category]) ) // always separate this kind of statements into two parts
       await client.query('COMMIT')
+      console.log(statements)
+      return res.status(200).json({message:"Operation performed with success!", data : statements})
     }
     catch(e){
       await client.query('ROLLBACK')
@@ -48,9 +57,18 @@ export default async function alineaA(req, res) {
       client.release()
     }
 
-    return res.status(200).json({message:"Operation performed with success!", data : result})
+    
   } catch (err) {
-    return res.status(400).json({message: err.message})
+    console.log(err)
+    let msg;
+    switch(err.constrain){
+      case "product_assciated_to_name_fkey":
+        msg = 'Error: First remove all the products that belong to this category.' 
+        break
+      default:
+        msg = err.message
+    }
+    return res.status(400).json({message: msg}) // warning: exposes internal state of server
   }
 
 }
