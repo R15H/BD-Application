@@ -9,6 +9,7 @@ const threateningMessage ="Unexpected field value. This should never happen here
 // await is only allowed inside async functions! remove the async atributte and we lose everything life has to give. Why?
 export default async function alineaA(req, res) {
   var {operation, type, category } = req.body
+  var userFriendlyType = type
   console.log(operation, type, category)
   var baseQuery;
   try{
@@ -39,14 +40,19 @@ export default async function alineaA(req, res) {
     try{
       let statements = []
       await client.query('BEGIN')
-      let queryText = baseQuery[0].replace('%', type)
-      statements.push( await client.query(queryText, [category]) ) // always separate this kind of statements into two parts
-      
 
+      // delete category from simple/super category table
+      let queryText = baseQuery[0].replace('%', type)
+      statements.push( await client.query(queryText, [category]) ) 
+      if ( statements[0].rowCount == 0 ) 
+        return res.status(400).json({message:"The specified category does not exist."})
+
+      // delete category from category table
       queryText = baseQuery[1].replace('%', type)
-      statements.push( await client.query(queryText, [category]) ) // always separate this kind of statements into two parts
+      statements.push( await client.query(queryText, [category]) ) 
+
+
       await client.query('COMMIT')
-      console.log(statements)
       return res.status(200).json({message:"Operation performed with success!", data : statements})
     }
     catch(e){
@@ -61,14 +67,18 @@ export default async function alineaA(req, res) {
   } catch (err) {
     console.log(err)
     let msg;
-    switch(err.constrain){
-      case "product_assciated_to_name_fkey":
-        msg = 'Error: First remove all the products that belong to this category.' 
+    // Friendlify most common errors
+    switch(err.constraint){
+      case "product_associated_to_name_fkey":
+        msg = 'Error: Please remove all the products that belong to this category before trying to delete it.' 
+        break
+      case "simple_category_name_fkey":
+      case "super_category_name_fkey":
+        msg = `Error: The specified category is not a ${userFriendlyType} category.`
         break
       default:
         msg = err.message
     }
     return res.status(400).json({message: msg}) // warning: exposes internal state of server
   }
-
 }
